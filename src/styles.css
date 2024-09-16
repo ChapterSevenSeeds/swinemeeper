@@ -1,0 +1,13 @@
+.cell {
+    cursor: pointer;
+}
+.cell-open {
+    background-color: #7575ff;
+}
+.cell-not-open {
+    background-color: #0000ff;
+
+}
+.cell-not-open:hover {
+    background-color: #3d3dff;
+}
