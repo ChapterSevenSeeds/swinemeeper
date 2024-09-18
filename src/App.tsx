@@ -1,8 +1,9 @@
-import "./styles.css";
+import "./main.css";
 
 import classNames from "classnames";
 import _ from "lodash";
 import { useCallback, useEffect, useRef, useState } from "react";
+import Button from "./Button";
 
 type Node = {
     row: number;
@@ -26,6 +27,9 @@ export default function App() {
     const [width, setWidth] = useState(10);
     const [height, setHeight] = useState(10);
     const [bombs, setBombs] = useState(10);
+    const [status, setStatus] = useState<"in progress" | "dead" | "won">(
+        "in progress"
+    );
     const isFirstCellClicked = useRef(false);
 
     const populateGrid = useCallback(() => {
@@ -44,6 +48,7 @@ export default function App() {
             newGrid.push(rowObj);
         }
 
+        setStatus("in progress");
         setGrid(newGrid);
     }, [height, width]);
 
@@ -112,6 +117,7 @@ export default function App() {
             return;
         } else if (cell.bomb) {
             alert("You died");
+            setStatus("dead");
             for (const cell of grid.flat()) {
                 if (!cell.bomb) continue;
                 cell.status = "open";
@@ -158,6 +164,7 @@ export default function App() {
             currentCell.status = "open";
         }
 
+        checkWin();
         setGrid([...grid]);
     }
 
@@ -174,113 +181,168 @@ export default function App() {
                 break;
         }
 
+        checkWin();
+        setGrid([...grid]);
+    }
+
+    function checkWin() {
+        for (const cell of grid.flat()) {
+            if (cell.bomb && cell.status !== "flagged") return;
+        }
+
+        // All bombs are flagged
+        for (const cell of grid.flat()) {
+            if (!cell.bomb) {
+                cell.status = "open";
+            }
+        }
+
+        setGrid([...grid]);
+        setStatus("won");
+        alert("You won!");
+    }
+
+    function solve() {
+        let pendingStage1SolverRun = true;
+        while (pendingStage1SolverRun) {
+            pendingStage1SolverRun = false;
+            for (const cell of grid.flat().filter(x => x.status === "open")) {
+                const surroundingBombs = countSurroundingBombs(cell.row, cell.column);
+                const unopenedSurroundingCells = getSurroundingCells(cell.row, cell.column).filter(x => x.status !== "open")
+                const flaggedSurroundingCells = unopenedSurroundingCells.filter(x => x.status === "flagged");
+                const remainingSurroundingBombs = surroundingBombs - flaggedSurroundingCells.length;
+                const unflaggedSurroundingCells = unopenedSurroundingCells.filter(x => x.status === "untouched");
+    
+                if (remainingSurroundingBombs === unflaggedSurroundingCells.length) {
+                    // If the number of surrounding bombs (factoring in flagged cells) is equal to the number of surrounding untouched cells, flag all those cells.
+                    for (const cellToFlag of unflaggedSurroundingCells) {
+                        cellToFlag.status = "flagged";
+                        pendingStage1SolverRun = true;
+                    }
+                } else if (remainingSurroundingBombs === 0) {
+                    // If there are no surrounding bombs (factoring in flagged cells), open all surrounding cells.
+                    for (const cellToOpen of unflaggedSurroundingCells) {
+                        cellToOpen.status = "open";
+                        pendingStage1SolverRun = true;
+                    }
+                }
+            }
+        }
+
         setGrid([...grid]);
     }
 
     return (
-        <div style={{ display: "flex", gap: 2, flexDirection: "column" }}>
-            <div style={{ display: "flex", gap: 4 }}>
-                <strong>
-                    Bombs:{" "}
-                    {bombs -
-                        _.chain(grid)
-                            .flatten()
-                            .sumBy((x) => (x.status === "flagged" ? 1 : 0))
-                            .value()}
-                </strong>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-                {grid.map((row, i) => (
-                    <div
-                        key={i}
-                        style={{ display: "flex", flexDirection: "row" }}
-                    >
-                        {row.map((cell) => (
-                            <div
-                                key={cell.column}
-                                className={classNames(
-                                    "cell",
-                                    cell.status === "open"
-                                        ? "cell-open"
-                                        : "cell-not-open"
-                                )}
-                                style={{
-                                    boxShadow: "inset #0000aa 0 0 0px 3px",
-                                    width: "30px",
-                                    height: "30px",
-                                    display: "flex",
-                                    justifyContent: "center",
-                                    lineHeight: "30px",
-                                }}
-                                onClick={(e) => clickCell(e, cell)}
-                                onContextMenu={(e) => rightClickCell(e, cell)}
-                            >
-                                {cell.status === "open" ? (
-                                    cell.bomb ? (
-                                        "💣"
-                                    ) : countSurroundingBombs(
-                                          cell.row,
-                                          cell.column
-                                      ) > 0 ? (
-                                        countSurroundingBombs(
-                                            cell.row,
-                                            cell.column
+        <div className="flex justify-center">
+            <div className="flex gap-2 flex-col items-center">
+                <div className="flex gap-4">
+                    <strong>
+                        Bombs:{" "}
+                        {bombs -
+                            _.chain(grid)
+                                .flatten()
+                                .sumBy((x) => (x.status === "flagged" ? 1 : 0))
+                                .value()}
+                    </strong>
+                </div>
+                <div className="flex flex-col">
+                    {grid.map((row, i) => (
+                        <div key={i} className="flex flex-row">
+                            {row.map((cell) => (
+                                <div
+                                    key={cell.column}
+                                    className={classNames(
+                                        "select-none border-gray-700 border",
+                                        cell.status === "open"
+                                            ? cell.bomb
+                                                ? "bg-red-500"
+                                                : "bg-gray-300"
+                                            : classNames(
+                                                  "bg-gray-500",
+                                                  status === "in progress" &&
+                                                      "hover:bg-gray-600 cursor-pointer"
+                                              )
+                                    )}
+                                    style={{
+                                        width: "30px",
+                                        height: "30px",
+                                        display: "flex",
+                                        justifyContent: "center",
+                                        lineHeight: "30px",
+                                    }}
+                                    onClick={(e) => clickCell(e, cell)}
+                                    onContextMenu={(e) =>
+                                        rightClickCell(e, cell)
+                                    }
+                                >
+                                    {cell.status === "open" ? (
+                                        cell.bomb ? (
+                                            "💣"
+                                        ) : countSurroundingBombs(
+                                              cell.row,
+                                              cell.column
+                                          ) > 0 ? (
+                                            countSurroundingBombs(
+                                                cell.row,
+                                                cell.column
+                                            )
+                                        ) : (
+                                            ""
                                         )
+                                    ) : cell.status === "flagged" ? (
+                                        <span style={{ color: "red" }}>⚑</span>
                                     ) : (
                                         ""
-                                    )
-                                ) : cell.status === "flagged" ? (
-                                    <span style={{ color: "red" }}>⚑</span>
-                                ) : (
-                                    ""
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                ))}
-            </div>
-            <div style={{ display: "flex", gap: 2 }}>
-                <button
-                    onClick={() => {
-                        setBombs(10);
-                        setWidth(10);
-                        setHeight(10);
-                        populateGrid();
-                    }}
-                >
-                    Easy
-                </button>
-                <button
-                    onClick={() => {
-                        setBombs(40);
-                        setWidth(15);
-                        setHeight(15);
-                        populateGrid();
-                    }}
-                >
-                    Medium
-                </button>
-                <button
-                    onClick={() => {
-                        setBombs(150);
-                        setWidth(25);
-                        setHeight(25);
-                        populateGrid();
-                    }}
-                >
-                    Hard
-                </button>
-                <button
-                    onClick={() => {
-                        setBombs(5000);
-                        setWidth(100);
-                        setHeight(100);
-                        populateGrid();
-                    }}
-                >
-                    Impossible
-                </button>
-                <button onClick={() => populateGrid()}>Reset</button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    ))}
+                </div>
+                <div className="flex gap-2">
+                    <Button
+                        onClick={() => {
+                            setBombs(10);
+                            setWidth(10);
+                            setHeight(10);
+                            populateGrid();
+                        }}
+                    >
+                        Easy
+                    </Button>
+                    <Button
+                        onClick={() => {
+                            setBombs(40);
+                            setWidth(15);
+                            setHeight(15);
+                            populateGrid();
+                        }}
+                    >
+                        Medium
+                    </Button>
+                    <Button
+                        onClick={() => {
+                            setBombs(150);
+                            setWidth(25);
+                            setHeight(25);
+                            populateGrid();
+                        }}
+                    >
+                        Hard
+                    </Button>
+                    <Button
+                        onClick={() => {
+                            setBombs(5000);
+                            setWidth(100);
+                            setHeight(100);
+                            populateGrid();
+                        }}
+                    >
+                        Impossible
+                    </Button>
+                    <Button onClick={() => populateGrid()}>Reset</Button>
+                    <Button onClick={() => solve()}>Solve</Button>
+                </div>
             </div>
         </div>
     );
