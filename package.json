@@ -20,8 +20,8 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "pull-resources": "ts-node pull-resources.ts",
+    "frontend-deploy": "ts-node frontend-deploy.ts"
   },
   "eslintConfig": {
     "extends": [
@@ -42,10 +42,13 @@
     ]
   },
   "devDependencies": {
+    "@aws-sdk/client-cloudformation": "^3.654.0",
+    "@aws-sdk/client-cloudfront": "^3.654.0",
     "@types/lodash": "^4.17.7",
     "@types/uuid": "^10.0.0",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
-    "tailwindcss": "^3.4.12"
+    "tailwindcss": "^3.4.12",
+    "ts-node": "^10.9.2"
   }
 }

@@ -10,6 +10,9 @@ jobs:
             - uses: actions/setup-node@v4
               with:
                   node-version: "latest"
+            - run: npm i -g pnpm
+            - run: pnpm i
+            - run: pnpm run build
             - uses: aws-actions/setup-sam@v1
             - uses: aws-actions/configure-aws-credentials@v1
               with:
@@ -18,4 +21,4 @@ jobs:
                   aws-region: us-east-1
 
             - run: sam build --use-container
-            - run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset --stack-name minsweeper-stack --capabilities CAPABILITY_IAM --resolve-s3 --parameter-overrides s3BucketName=${{secrets.S3_BUCKET}} certificateId=${{secrets.CERTIFICATE_ID}}
+            - run: sam deploy --template-file .aws-sam/build/template.yaml --no-confirm-changeset --no-fail-on-empty-changeset --stack-name minsweeper-stack --capabilities CAPABILITY_IAM --resolve-s3 --parameter-overrides s3BucketName=${{secrets.S3_BUCKET}} certificateId=${{secrets.CERTIFICATE_ID}}
