@@ -49,7 +49,7 @@ Resources:
         Aliases:
           - minesweeper.tysonsstuff.com
         ViewerCertificate:
-          AcmCertificateArn: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:certificate/${certificateId}
+          AcmCertificateArn: !Sub arn:aws:acm:${AWS::Region}:${AWS::AccountId}:certificate/${certificateId}
           SslSupportMethod: sni-only
         HttpVersion: http2
         Origins:
