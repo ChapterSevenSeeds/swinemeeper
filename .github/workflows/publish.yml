@@ -12,7 +12,6 @@ jobs:
                   node-version: "latest"
             - run: npm i -g pnpm
             - run: pnpm i
-            - run: pnpm run build
             - uses: aws-actions/setup-sam@v1
             - uses: aws-actions/configure-aws-credentials@v1
               with:
