@@ -9,6 +9,33 @@ import { StopwatchResult } from "react-timer-hook";
 import Timer from "./Timer";
 import Board, { Cell } from "./Board";
 import { runSolver } from "./solver";
+import _ from "lodash";
+
+const cellSize = 40;
+
+function getNumberColor(countOfSurroundingBombs: number) {
+    switch (countOfSurroundingBombs) {
+        case 1:
+            return "#0101FF";
+        case 2:
+            return "#008400";
+        case 3:
+            return "#FD0200";
+        case 4:
+            return "#010085";
+        case 5:
+            return "#870001";
+        case 6:
+            return "#008284";
+        case 7:
+            return "#840083";
+        case 8:
+            return "#777777";
+
+        default:
+            throw new Error("You have more than 8 surrounding bombs 🤨");
+    }
+}
 
 export default function App() {
     const rerender = useReducer((x) => x + 1, 0)[1];
@@ -53,7 +80,7 @@ export default function App() {
         populateGrid();
     }, [populateGrid]);
 
-    function clickCell(e: React.MouseEvent<HTMLDivElement>, cell: Cell) {
+    function clickCell(cell: Cell) {
         if (pendingIgnoreClickAfterLongPress.current) {
             pendingIgnoreClickAfterLongPress.current = false;
             return;
@@ -118,6 +145,13 @@ export default function App() {
     }
 
     function solve() {
+        if (status === "dead" || status === "won") return;
+
+        if (status === "not started") {
+            const cellToOpen = _.sample(board.current.boardFlat)!;
+            clickCell(cellToOpen);
+        }
+
         runSolver(board.current);
         checkWin();
 
@@ -137,65 +171,81 @@ export default function App() {
                     <div
                         className="flex flex-col"
                         style={{
-                            width: `${width * 31}px`,
-                            height: `${height * 31}px`,
+                            width: `${width * (cellSize + 1)}px`,
+                            height: `${height * (cellSize + 1)}px`,
                         }}
                     >
                         {board.current.board.map((row, rowIndex) => (
                             <div key={rowIndex} className="flex flex-row">
-                                {row.map((cell) => (
-                                    <div
-                                        key={cell.id}
-                                        className={classNames(
-                                            "select-none border-gray-700 border",
-                                            cell.status === "open"
-                                                ? cell.isBomb
-                                                    ? "bg-red-500"
-                                                    : "bg-gray-300"
-                                                : classNames(
-                                                      "bg-gray-500",
-                                                      (status ===
-                                                          "in progress" ||
-                                                          status ===
-                                                              "not started") &&
-                                                          "hover:bg-gray-600 cursor-pointer"
-                                                  )
-                                        )}
-                                        style={{
-                                            width: "30px",
-                                            height: "30px",
-                                            display: "flex",
-                                            justifyContent: "center",
-                                            lineHeight: "30px",
-                                        }}
-                                        id={cell.id}
-                                        onClick={(e) => clickCell(e, cell)}
-                                        onContextMenu={(e) =>
-                                            onRightClickCell(e, cell)
-                                        }
-                                        {...longPressHandlers}
-                                    >
-                                        {cell.status === "open" ? (
-                                            cell.isBomb ? (
-                                                "💣"
-                                            ) : board.current.countSurroundingBombsFromNode(
-                                                  cell
-                                              ) > 0 ? (
-                                                board.current.countSurroundingBombsFromNode(
-                                                    cell
+                                {row.map((cell) => {
+                                    const numberOfSurroundingBombs =
+                                        board.current.countSurroundingBombsFromNode(
+                                            cell
+                                        );
+                                    return (
+                                        <div
+                                            key={cell.id}
+                                            className={classNames(
+                                                "select-none border-gray-700 border",
+                                                cell.status === "open"
+                                                    ? cell.isBomb
+                                                        ? "bg-red-500"
+                                                        : "bg-gray-300"
+                                                    : classNames(
+                                                          "bg-gray-500",
+                                                          (status ===
+                                                              "in progress" ||
+                                                              status ===
+                                                                  "not started") &&
+                                                              "hover:bg-gray-600 cursor-pointer"
+                                                      )
+                                            )}
+                                            style={{
+                                                width: `${cellSize}px`,
+                                                height: `${cellSize}px`,
+                                                display: "flex",
+                                                justifyContent: "center",
+                                                lineHeight: `${cellSize}px`,
+                                                fontSize: `${cellSize - 10}px`,
+                                                color:
+                                                    cell.isBomb ||
+                                                    numberOfSurroundingBombs ===
+                                                        0
+                                                        ? undefined
+                                                        : getNumberColor(
+                                                              numberOfSurroundingBombs
+                                                          ),
+                                            }}
+                                            id={cell.id}
+                                            onClick={() => clickCell(cell)}
+                                            onContextMenu={(e) =>
+                                                onRightClickCell(e, cell)
+                                            }
+                                            {...longPressHandlers}
+                                        >
+                                            {cell.status === "open" ? (
+                                                cell.isBomb ? (
+                                                    "💣"
+                                                ) : numberOfSurroundingBombs >
+                                                  0 ? (
+                                                    <strong>
+                                                        {
+                                                            numberOfSurroundingBombs
+                                                        }
+                                                    </strong>
+                                                ) : (
+                                                    ""
                                                 )
+                                            ) : cell.status === "flagged" ? (
+                                                <span style={{ color: "red" }}>
+                                                    ⚑
+                                                </span>
                                             ) : (
                                                 ""
-                                            )
-                                        ) : cell.status === "flagged" ? (
-                                            <span style={{ color: "red" }}>
-                                                ⚑
-                                            </span>
-                                        ) : (
-                                            ""
-                                        )}
-                                    </div>
-                                ))}
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         ))}
                     </div>

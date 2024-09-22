@@ -133,14 +133,12 @@ export default class Board {
 
         this._bombsPlaced = true;
         const surroundingCellCoordinates = new Set<string>(
-            this.getSurroundingCellsFromNode(focusCell).map((x) => x.id)
+            [focusCell.id, ...this.getSurroundingCellsFromNode(focusCell).map((x) => x.id)]
         );
         const cellIdsToMarkAsBombs = new Set(
             _.chain(iterateCoordinates(this.height, this.width))
                 .filter(
                     (x) =>
-                        x.column !== focusCell.column &&
-                        x.row !== focusCell.row &&
                         !surroundingCellCoordinates.has(
                             this.board[x.row][x.column].id
                         )
