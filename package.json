@@ -20,8 +20,8 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "pull-resources": "ts-node pull-resources.ts",
-    "frontend-deploy": "ts-node frontend-deploy.ts"
+    "pull-resources": "ts-node ./pull-resources.ts",
+    "frontend-deploy": "ts-node ./frontend-deploy.ts"
   },
   "eslintConfig": {
     "extends": [
