@@ -90,3 +90,5 @@ Resources:
 Outputs:
   CloudFrontDistributionId:
     Value: !Ref CloudfrontDistribution
+  S3BucketName:
+    Value: !Ref HostingBucket
